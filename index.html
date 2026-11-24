@@ -68,7 +68,7 @@
       <div class="rz"><label style="flex:2">Gumka</label><input type="range" id="grG" min="2" max="30" step="1" value="8" style="flex:3"><b id="grGW" style="flex:0 0 52px;text-align:right">8 mm</b></div>
       <h3>Dokładny wymiar</h3>
       <div class="rz"><label>X (mm)<input id="wX" type="number" min="0" step="0.5" placeholder="—"></label><label>Y (mm)<input id="wY" type="number" min="0" step="0.5" placeholder="—"></label></div>
-      <div class="mala">Prostokąt / koło: wpisz X i Y, potem jeden klik na kartce = kształt dokładnie tej wielkości (środek tam, gdzie klikniesz). Wymiar liczy się <b>w środku kreski</b> – w Warsztacie wybierz „brzeg wewnętrzny”. Puste = rysujesz myszką.</div>
+      <div class="mala">Prostokąt / koło: wpisz X i Y, potem jeden klik na kartce = kształt dokładnie tej wielkości (środek tam, gdzie klikniesz). Puste = rysujesz myszką.<br>Wymiar prostokąta i koła liczy się zawsze <b>w środku kreski</b> – w Warsztacie wybierz „brzeg wewnętrzny”.</div>
       <h3>Przyciąganie</h3>
       <select id="snap"><option value="0">wyłączone</option><option value="1" selected>do 1 mm</option><option value="5">do 5 mm</option><option value="10">do 1 cm</option></select>
       <label class="chk"><input type="checkbox" id="siatka" checked> pokaż siatkę (nie drukuje się)</label>
@@ -159,8 +159,8 @@ function rysuj(){
     const [ax, ay] = doEkranu(...akcja.a), [bx, by] = doEkranu(...akcja.b);
     wc.beginPath();
     if (akcja.n === 'lin'){ wc.moveTo(ax, ay); wc.lineTo(bx, by); }
-    else if (akcja.n === 'pro') wc.rect(Math.min(ax, bx), Math.min(ay, by), Math.abs(bx - ax), Math.abs(by - ay));
-    else wc.ellipse((ax + bx) / 2, (ay + by) / 2, Math.abs(bx - ax) / 2, Math.abs(by - ay) / 2, 0, 0, 7);
+    else if (akcja.n === 'pro') wc.rect(Math.min(ax, bx) - g / 2, Math.min(ay, by) - g / 2, Math.abs(bx - ax) + g, Math.abs(by - ay) + g);
+    else wc.ellipse((ax + bx) / 2, (ay + by) / 2, Math.abs(bx - ax) / 2 + g / 2, Math.abs(by - ay) / 2 + g / 2, 0, 0, 7);
     wc.stroke();
   }
   if (wielo.length){
@@ -193,6 +193,9 @@ function kreska(w){ kc.strokeStyle = '#000'; kc.lineWidth = w; kc.lineCap = 'rou
 
 function rysujKsztalt(n, a, b){   // na kartce, z zapamietaniem do cofania
   const g = $('#gr').value * PXMM, m = g + 4;
+  if (n === 'pro' || n === 'eli'){   // wymiar = brzeg wewnetrzny kreski: sciezka pol kreski na zewnatrz
+    const x0 = Math.min(a[0], b[0]) - g / 2, y0 = Math.min(a[1], b[1]) - g / 2, x1 = Math.max(a[0], b[0]) + g / 2, y1 = Math.max(a[1], b[1]) + g / 2; a = [x0, y0]; b = [x1, y1];
+  }
   snapStart(); kreska(g); kc.beginPath();
   if (n === 'lin'){ kc.moveTo(...a); kc.lineTo(...b); }
   else if (n === 'pro') kc.rect(Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]));
@@ -224,7 +227,7 @@ wid.onpointerdown = (e) => {
   }
   p = przyciagnij(p);
   if ((narz === 'pro' || narz === 'eli') && dokladny()){
-    const [dx, dy] = dokladny(), g0 = $('#gr').value * PXMM, hx = (dx * PXMM + g0) / 2, hy = (dy * PXMM + g0) / 2;   // wymiar = w srodku kreski (brzeg wewnetrzny)
+    const [dx, dy] = dokladny(), hx = dx * PXMM / 2, hy = dy * PXMM / 2;   // wymiar = w srodku kreski (rysujKsztalt doda pol kreski)
     rysujKsztalt(narz, [p[0] - hx, p[1] - hy], [p[0] + hx, p[1] + hy]); rysuj(); toast(`${narz === 'pro' ? 'Prostokąt' : 'Koło / owal'} ${mm(dx)} × ${mm(dy)} mm`); return;
   }
   if (narz === 'wie'){
