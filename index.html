@@ -45,7 +45,8 @@
     <h1>✏️ Rysownik A4<small>autor Adam Bryks 2026</small></h1>
     <button class="s" id="bNowa">🗒 Nowa kartka</button>
     <button class="f" id="bOtworz">📂 Otwórz skan / zdjęcie</button><input type="file" id="plik" accept="image/*" hidden>
-    <button class="z" id="bZapisz">💾 Zapisz PNG (do Warsztatu)</button>
+    <button class="z" id="bZapisz">💾 Zapisz PNG</button>
+    <button class="n" id="bWarsztat" title="Rysunek od razu do Szkicu w Warsztacie 3D – bez szukania pliku">📐 Wyślij do Warsztatu</button>
     <span class="sep"></span>
     <button class="p" id="bCofnij" title="Strg+Z">↶ Cofnij</button>
     <button class="p" id="bPonow" title="Strg+Y">↷ Ponów</button>
@@ -352,6 +353,19 @@ $('#bZapisz').onclick = () => {
     a.href = URL.createObjectURL(z); a.download = `rysunek_A4_${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}.png`;
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); zmiany = false;
     toast('Zapisane jako PNG. W Warsztacie: Szkic → Wybierz zdjęcie… – wymiar weźmie sam.', 5000);
+  }, 'image/png');
+};
+// ---------- most do Warsztatu 3D: wspolna baza przegladarki (ta sama strona rumburak7.github.io) ----------
+function mostDB(){ return new Promise((ok, zle) => { const r = indexedDB.open('rysownik_most', 1); r.onupgradeneeded = () => r.result.createObjectStore('x'); r.onsuccess = () => ok(r.result); r.onerror = () => zle(r.error); }); }
+$('#bWarsztat').onclick = () => {
+  kart.toBlob(async (b) => {
+    try {
+      const z = await pngZDpi(b, DPI), db = await mostDB();
+      await new Promise((ok, zle) => { const t = db.transaction('x', 'readwrite'); t.objectStore('x').put({ blob: z, dpi: DPI, czas: Date.now() }, 'ostatni'); t.oncomplete = ok; t.onerror = () => zle(t.error); });
+      zmiany = false;
+      toast('Wysłane! W Warsztacie: Szkic → „✏️ Z Rysownika”. Otwieram Warsztat…', 6000);
+      setTimeout(() => window.open('../Warsztat-3D/', 'warsztat3d'), 700);
+    } catch (e) {  toast('Nie udało się wysłać: ' + e.message + ' – zapisz PNG i wczytaj ręcznie.', 6000); }
   }, 'image/png');
 };
 window.addEventListener('beforeunload', (e) => { if (zmiany){ e.preventDefault(); e.returnValue = ''; } });
