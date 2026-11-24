@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rysownik A4</title>
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#141a21">
+<style>
+  :root{--bg:#141a21;--pan:#1d252e;--pan2:#26313c;--ramka:#33414f;--tekst:#e8eef3;--szary:#8b9aa8;--akc:#2f7de1}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--tekst);font-family:"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;overflow:hidden}
+  .app{display:grid;grid-template-rows:auto 1fr auto;height:100vh}
+  .gora{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:var(--pan);border-bottom:1px solid var(--ramka)}
+  .gora h1{font-size:18px;margin:0 10px 0 0;white-space:nowrap}.gora h1 small{color:var(--szary);font-weight:400;font-size:12px;margin-left:6px}
+  .sep{width:1px;align-self:stretch;background:var(--ramka);margin:0 4px}
+  button{font-family:inherit;font-size:14px;cursor:pointer;border-radius:8px;border:0;padding:8px 11px;color:#fff;font-weight:600;background:var(--pan2)}
+  button:hover{filter:brightness(1.15)}
+  button.n{background:#2f7de1}button.z{background:#1f9a6a}button.f{background:#8a4fd1}button.p{background:#e08a1e}button.c{background:#d6453a}button.s{background:#3a4a5a}
+  .srodek{display:grid;grid-template-columns:200px 1fr;min-height:0}
+  .narz{background:var(--pan);border-right:1px solid var(--ramka);padding:10px;display:flex;flex-direction:column;gap:6px;overflow:auto}
+  .narz h3{margin:8px 0 2px;font-size:13px;color:var(--szary);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .nb{display:flex;align-items:center;gap:8px;background:var(--pan2);color:var(--tekst);text-align:left;font-weight:500;border:2px solid transparent}
+  .nb.on{border-color:#ffd54a;background:#3a4656}
+  .nb i{font-style:normal;width:22px;text-align:center}
+  .nb kbd{margin-left:auto;font-size:11px;color:var(--szary);font-family:inherit}
+  label{font-size:13px;color:var(--szary);display:block}
+  input,select{width:100%;padding:6px 8px;border-radius:7px;border:1px solid var(--ramka);background:#0f141a;color:var(--tekst);font-size:14px;font-family:inherit}
+  .rz{display:flex;gap:6px}.rz>*{flex:1}
+  .widokBox{position:relative;min-width:0;min-height:0;background:#0e1318}
+  #widok{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+  .dol{display:flex;gap:18px;padding:6px 12px;background:var(--pan);border-top:1px solid var(--ramka);font-size:13px;color:var(--szary);flex-wrap:wrap}
+  .dol b{color:var(--tekst)}
+  #toast{position:fixed;left:50%;bottom:44px;transform:translateX(-50%);background:#0b1016;border:1px solid var(--ramka);padding:10px 16px;border-radius:10px;font-size:14px;max-width:80vw;z-index:9}
+  .mala{font-size:12px;color:var(--szary);line-height:1.35}
+  .chk{display:flex;align-items:center;gap:6px;color:var(--tekst);font-size:13px}
+  .chk input{width:auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="gora">
+    <h1>✏️ Rysownik A4<small>autor Adam Bryks 2026</small></h1>
+    <button class="s" id="bNowa">🗒 Nowa kartka</button>
+    <button class="f" id="bOtworz">📂 Otwórz skan / zdjęcie</button><input type="file" id="plik" accept="image/*" hidden>
+    <button class="z" id="bZapisz">💾 Zapisz PNG (do Warsztatu)</button>
+    <span class="sep"></span>
+    <button class="p" id="bCofnij" title="Strg+Z">↶ Cofnij</button>
+    <button class="p" id="bPonow" title="Strg+Y">↷ Ponów</button>
+    <span class="sep"></span>
+    <button class="s" id="bOrient">⟳ A4 pionowo</button>
+    <button class="s" id="bWybiel" title="Szare tło skanu robi się białe, kreski zostają">🧽 Wybiel tło</button>
+    <button class="s" id="bDopasuj">⤢ Cała kartka</button>
+  </div>
+  <div class="srodek">
+    <div class="narz">
+      <h3>Narzędzia</h3>
+      <button class="nb on" data-n="pen"><i>✏️</i>Pisak<kbd>P</kbd></button>
+      <button class="nb" data-n="gum"><i>🧽</i>Gumka<kbd>G</kbd></button>
+      <button class="nb" data-n="lin"><i>📏</i>Linia<kbd>L</kbd></button>
+      <button class="nb" data-n="pro"><i>▭</i>Prostokąt<kbd>R</kbd></button>
+      <button class="nb" data-n="eli"><i>◯</i>Koło / owal<kbd>K</kbd></button>
+      <button class="nb" data-n="wie"><i>⬠</i>Wielokąt<kbd>W</kbd></button>
+      <h3>Grubość</h3>
+      <div class="rz"><input type="range" id="gr" min="0.5" max="6" step="0.5" value="2"><b id="grW" style="flex:0 0 52px;text-align:right">2 mm</b></div>
+      <div class="rz"><label style="flex:2">Gumka</label><input type="range" id="grG" min="2" max="30" step="1" value="8" style="flex:3"><b id="grGW" style="flex:0 0 52px;text-align:right">8 mm</b></div>
+      <h3>Dokładny wymiar</h3>
+      <div class="rz"><label>X (mm)<input id="wX" type="number" min="0" step="0.5" placeholder="—"></label><label>Y (mm)<input id="wY" type="number" min="0" step="0.5" placeholder="—"></label></div>
+      <div class="mala">Prostokąt / koło: wpisz X i Y, potem jeden klik na kartce = kształt dokładnie tej wielkości (środek tam, gdzie klikniesz). Wymiar liczy się <b>w środku kreski</b> – w Warsztacie wybierz „brzeg wewnętrzny”. Puste = rysujesz myszką.</div>
+      <h3>Przyciąganie</h3>
+      <select id="snap"><option value="0">wyłączone</option><option value="1" selected>do 1 mm</option><option value="5">do 5 mm</option><option value="10">do 1 cm</option></select>
+      <label class="chk"><input type="checkbox" id="siatka" checked> pokaż siatkę (nie drukuje się)</label>
+      <div class="mala" style="margin-top:8px">Shift = linia prosto (poziomo / pionowo / skos), koło zamiast owalu, kwadrat.<br>Wielokąt: klikaj rogi, dwuklik albo klik w pierwszy róg = koniec.<br>Kółko myszy = zoom, prawy przycisk = przesuwanie kartki.</div>
+    </div>
+    <div class="widokBox" id="box"><canvas id="widok"></canvas></div>
+  </div>
+  <div class="dol"><span>Kursor: <b id="pozW">–</b></span><span id="infoW"></span><span>Kartka: <b id="kartW">A4 pionowo 210 × 297 mm</b></span><span>Zoom: <b id="zoomW">–</b></span></div>
+</div>
+<div id="toast" hidden></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const DPI = 150, PXMM = DPI / 25.4;            // pikseli kartki na milimetr
+let pion = true;
+const kart = document.createElement('canvas'), kc = kart.getContext('2d', { willReadFrequently: true });
+const kopia = document.createElement('canvas'), kpc = kopia.getContext('2d', { willReadFrequently: true });
+const wid = $('#widok'), wc = wid.getContext('2d');
+let sc = 0.5, ox = 0, oy = 0, dpr = 1;
+let narz = 'pen', akcja = null, mysz = null, wielo = [], zmiany = false;
+const cofnij = [], ponow = [];
+let toastT;
+function toast(t, ms = 3200){ const e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => e.hidden = true, ms); }
+const mm = v => String(+v.toFixed(1)).replace('.', ',');
+
+// ---------- kartka ----------
+function rozmiar(){ return pion ? [210, 297] : [297, 210]; }
+function nowaKartka(){
+  const [w, h] = rozmiar(); kart.width = Math.round(w * PXMM); kart.height = Math.round(h * PXMM);
+  kc.fillStyle = '#fff'; kc.fillRect(0, 0, kart.width, kart.height);
+  kopia.width = kart.width; kopia.height = kart.height;
+  $('#kartW').textContent = `A4 ${pion ? 'pionowo' : 'poziomo'} ${w} × ${h} mm`;
+  $('#bOrient').textContent = pion ? '⟳ A4 pionowo' : '⟳ A4 poziomo';
+}
+function dopasuj(){
+  const r = wid.getBoundingClientRect();
+  sc = Math.min((r.width - 40) / kart.width, (r.height - 40) / kart.height);
+  ox = (r.width - kart.width * sc) / 2; oy = (r.height - kart.height * sc) / 2; rysuj();
+}
+function rozmiarWidoku(){ const r = wid.getBoundingClientRect(); dpr = window.devicePixelRatio || 1; wid.width = Math.round(r.width * dpr); wid.height = Math.round(r.height * dpr); rysuj(); }
+
+// ---------- cofanie (zapamietuje tylko zmieniony kawalek) ----------
+function snapStart(){ kpc.drawImage(kart, 0, 0); }
+function zapiszZmiane(x0, y0, x1, y1){
+  x0 = Math.max(0, Math.floor(x0)); y0 = Math.max(0, Math.floor(y0)); x1 = Math.min(kart.width, Math.ceil(x1)); y1 = Math.min(kart.height, Math.ceil(y1));
+  if (x1 <= x0 || y1 <= y0) return;
+  cofnij.push({ x: x0, y: y0, img: kpc.getImageData(x0, y0, x1 - x0, y1 - y0) });
+  if (cofnij.length > 60) cofnij.shift();
+  ponow.length = 0; zmiany = true;
+}
+function zapiszCala(){ snapStart(); cofnij.push({ x: 0, y: 0, img: kpc.getImageData(0, 0, kart.width, kart.height), w: kart.width, h: kart.height }); if (cofnij.length > 60) cofnij.shift(); ponow.length = 0; zmiany = true; }
+function przywroc(z, doStosu){
+  if (z.w && (z.w !== kart.width || z.h !== kart.height)){   // zmiana orientacji
+    const tera = { x: 0, y: 0, img: kc.getImageData(0, 0, kart.width, kart.height), w: kart.width, h: kart.height };
+    pion = z.h > z.w; kart.width = z.w; kart.height = z.h; kopia.width = z.w; kopia.height = z.h; nowaKartka(); kc.putImageData(z.img, 0, 0); doStosu.push(tera); dopasuj(); return;
+  }
+  doStosu.push({ x: z.x, y: z.y, img: kc.getImageData(z.x, z.y, z.img.width, z.img.height), w: z.w, h: z.h });
+  kc.putImageData(z.img, z.x, z.y); rysuj();
+}
+$('#bCofnij').onclick = () => { const z = cofnij.pop(); if (z) przywroc(z, ponow); };
+$('#bPonow').onclick = () => { const z = ponow.pop(); if (z) przywroc(z, cofnij); };
+
+// ---------- rysowanie widoku ----------
+function doEkranu(x, y){ return [ox + x * sc, oy + y * sc]; }
+function doKartki(X, Y){ return [(X - ox) / sc, (Y - oy) / sc]; }
+function rysuj(){
+  const W = wid.width, H = wid.height;
+  wc.setTransform(1, 0, 0, 1, 0, 0); wc.fillStyle = '#0e1318'; wc.fillRect(0, 0, W, H);
+  wc.setTransform(dpr, 0, 0, dpr, 0, 0);
+  wc.save(); wc.shadowColor = 'rgba(0,0,0,.5)'; wc.shadowBlur = 18; wc.fillStyle = '#fff'; wc.fillRect(ox, oy, kart.width * sc, kart.height * sc); wc.restore();
+  wc.imageSmoothingEnabled = sc < 1; wc.drawImage(kart, ox, oy, kart.width * sc, kart.height * sc);
+  if ($('#siatka').checked){
+    const [wmm, hmm] = rozmiar();
+    const kresk = (krok, kol, lw) => { if (krok * PXMM * sc < 5) return; wc.strokeStyle = kol; wc.lineWidth = lw; wc.beginPath();
+      for (let x = 0; x <= wmm + 0.01; x += krok){ const X = ox + x * PXMM * sc; wc.moveTo(X, oy); wc.lineTo(X, oy + kart.height * sc); }
+      for (let y = 0; y <= hmm + 0.01; y += krok){ const Y = oy + y * PXMM * sc; wc.moveTo(ox, Y); wc.lineTo(ox + kart.width * sc, Y); }
+      wc.stroke(); };
+    kresk(1, 'rgba(80,150,220,.10)', 1); kresk(5, 'rgba(80,150,220,.16)', 1); kresk(10, 'rgba(80,150,220,.35)', 1);
+    // podpisy cm
+    if (10 * PXMM * sc > 22){ wc.fillStyle = 'rgba(60,120,190,.75)'; wc.font = '11px Segoe UI,Arial';
+      for (let x = 10; x < wmm; x += 10) wc.fillText(x / 10, ox + x * PXMM * sc + 2, oy + 11);
+      for (let y = 10; y < hmm; y += 10) wc.fillText(y / 10, ox + 2, oy + y * PXMM * sc - 2); }
+  }
+  // podglad ksztaltu
+  const g = $('#gr').value * PXMM * sc;
+  wc.strokeStyle = 'rgba(20,20,20,.85)'; wc.lineWidth = g; wc.lineCap = 'round'; wc.lineJoin = 'round';
+  if (akcja && ['lin', 'pro', 'eli'].includes(akcja.n) && akcja.b){
+    const [ax, ay] = doEkranu(...akcja.a), [bx, by] = doEkranu(...akcja.b);
+    wc.beginPath();
+    if (akcja.n === 'lin'){ wc.moveTo(ax, ay); wc.lineTo(bx, by); }
+    else if (akcja.n === 'pro') wc.rect(Math.min(ax, bx), Math.min(ay, by), Math.abs(bx - ax), Math.abs(by - ay));
+    else wc.ellipse((ax + bx) / 2, (ay + by) / 2, Math.abs(bx - ax) / 2, Math.abs(by - ay) / 2, 0, 0, 7);
+    wc.stroke();
+  }
+  if (wielo.length){
+    wc.beginPath(); wielo.forEach((p, i) => { const [X, Y] = doEkranu(...p); i ? wc.lineTo(X, Y) : wc.moveTo(X, Y); });
+    if (mysz){ const [X, Y] = doEkranu(...przyciagnij(mysz)); wc.lineTo(X, Y); }
+    wc.stroke();
+    const [fx, fy] = doEkranu(...wielo[0]); wc.fillStyle = '#2ecc71'; wc.beginPath(); wc.arc(fx, fy, 6, 0, 7); wc.fill();
+  }
+  // kursor gumki / dokladny ksztalt
+  if (mysz && (narz === 'gum' || narz === 'pen')){
+    const r = (narz === 'gum' ? $('#grG').value : $('#gr').value) * PXMM * sc / 2, [X, Y] = doEkranu(...mysz);
+    wc.lineWidth = 1; wc.strokeStyle = narz === 'gum' ? '#e05545' : '#2f7de1'; wc.beginPath(); wc.arc(X, Y, Math.max(2, r), 0, 7); wc.stroke();
+  }
+  if (mysz && (narz === 'pro' || narz === 'eli') && !akcja && dokladny()){
+    const [dx, dy] = dokladny(), c = przyciagnij(mysz), [X, Y] = doEkranu(...c), w = (dx * PXMM + $('#gr').value * PXMM) * sc, h = (dy * PXMM + $('#gr').value * PXMM) * sc;
+    wc.lineWidth = Math.max(1, g); wc.strokeStyle = 'rgba(47,125,225,.7)'; wc.beginPath();
+    if (narz === 'pro') wc.rect(X - w / 2, Y - h / 2, w, h); else wc.ellipse(X, Y, w / 2, h / 2, 0, 0, 7);
+    wc.stroke();
+  }
+  $('#zoomW').textContent = Math.round(sc / (96 / 25.4 / PXMM) * 100) + ' %';
+}
+
+// ---------- pomocnicze ----------
+function dokladny(){ const x = parseFloat(String($('#wX').value).replace(',', '.')), y = parseFloat(String($('#wY').value).replace(',', '.')); return x > 0 && y > 0 ? [x, y] : null; }
+function przyciagnij(p){ const s = +$('#snap').value; if (!s) return p; const k = s * PXMM; return [Math.round(p[0] / k) * k, Math.round(p[1] / k) * k]; }
+function prosto(a, b){ const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), k = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * Math.PI / 4; return [a[0] + L * Math.cos(k), a[1] + L * Math.sin(k)]; }
+function pozycja(e){ const r = wid.getBoundingClientRect(); return doKartki(e.clientX - r.left, e.clientY - r.top); }
+function info(t){ $('#infoW').innerHTML = t || ''; }
+function kreska(w){ kc.strokeStyle = '#000'; kc.lineWidth = w; kc.lineCap = 'round'; kc.lineJoin = 'round'; }
+
+function rysujKsztalt(n, a, b){   // na kartce, z zapamietaniem do cofania
+  const g = $('#gr').value * PXMM, m = g + 4;
+  snapStart(); kreska(g); kc.beginPath();
+  if (n === 'lin'){ kc.moveTo(...a); kc.lineTo(...b); }
+  else if (n === 'pro') kc.rect(Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]));
+  else kc.ellipse((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, Math.abs(b[0] - a[0]) / 2, Math.abs(b[1] - a[1]) / 2, 0, 0, Math.PI * 2);
+  kc.stroke();
+  zapiszZmiane(Math.min(a[0], b[0]) - m, Math.min(a[1], b[1]) - m, Math.max(a[0], b[0]) + m, Math.max(a[1], b[1]) + m);
+}
+function zamknijWielo(){
+  if (wielo.length < 3){ wielo = []; rysuj(); return; }
+  const g = $('#gr').value * PXMM, m = g + 4; snapStart(); kreska(g); kc.beginPath();
+  wielo.forEach((p, i) => i ? kc.lineTo(...p) : kc.moveTo(...p)); kc.closePath(); kc.stroke();
+  const xs = wielo.map(p => p[0]), ys = wielo.map(p => p[1]);
+  zapiszZmiane(Math.min(...xs) - m, Math.min(...ys) - m, Math.max(...xs) + m, Math.max(...ys) + m);
+  wielo = []; info(''); rysuj();
+}
+
+// ---------- mysz ----------
+let pan = null;
+wid.oncontextmenu = e => e.preventDefault();
+wid.onpointerdown = (e) => {
+  wid.setPointerCapture(e.pointerId);
+  if (e.button === 2 || e.button === 1){ pan = { X: e.clientX, Y: e.clientY, ox, oy }; wid.style.cursor = 'grabbing'; return; }
+  if (e.button !== 0) return;
+  let p = pozycja(e);
+  if (narz === 'pen' || narz === 'gum'){
+    snapStart(); const w = (narz === 'gum' ? $('#grG').value : $('#gr').value) * PXMM;
+    akcja = { n: narz, last: p, box: [p[0], p[1], p[0], p[1]], w };
+    kc.fillStyle = narz === 'gum' ? '#fff' : '#000'; kc.beginPath(); kc.arc(p[0], p[1], w / 2, 0, 7); kc.fill(); rysuj(); return;
+  }
+  p = przyciagnij(p);
+  if ((narz === 'pro' || narz === 'eli') && dokladny()){
+    const [dx, dy] = dokladny(), g0 = $('#gr').value * PXMM, hx = (dx * PXMM + g0) / 2, hy = (dy * PXMM + g0) / 2;   // wymiar = w srodku kreski (brzeg wewnetrzny)
+    rysujKsztalt(narz, [p[0] - hx, p[1] - hy], [p[0] + hx, p[1] + hy]); rysuj(); toast(`${narz === 'pro' ? 'Prostokąt' : 'Koło / owal'} ${mm(dx)} × ${mm(dy)} mm`); return;
+  }
+  if (narz === 'wie'){
+    if (wielo.length >= 3){ const [fx, fy] = doEkranu(...wielo[0]), r = wid.getBoundingClientRect(); if (Math.hypot(e.clientX - r.left - fx, e.clientY - r.top - fy) < 10){ zamknijWielo(); return; } }
+    if (wielo.length && e.shiftKey) p = prosto(wielo[wielo.length - 1], p);
+    wielo.push(p); rysuj(); return;
+  }
+  akcja = { n: narz, a: p, b: p };
+};
+wid.onpointermove = (e) => {
+  if (pan){ ox = pan.ox + e.clientX - pan.X; oy = pan.oy + e.clientY - pan.Y; rysuj(); return; }
+  const p = pozycja(e); mysz = p;
+  $('#pozW').textContent = `${mm(p[0] / PXMM)} ; ${mm(p[1] / PXMM)} mm`;
+  if (akcja && (akcja.n === 'pen' || akcja.n === 'gum')){
+    kc.strokeStyle = akcja.n === 'gum' ? '#fff' : '#000'; kc.lineWidth = akcja.w; kc.lineCap = 'round'; kc.lineJoin = 'round';
+    kc.beginPath(); kc.moveTo(...akcja.last); kc.lineTo(...p); kc.stroke(); akcja.last = p;
+    const b = akcja.box; b[0] = Math.min(b[0], p[0]); b[1] = Math.min(b[1], p[1]); b[2] = Math.max(b[2], p[0]); b[3] = Math.max(b[3], p[1]);
+  } else if (akcja){
+    let b = przyciagnij(p);
+    if (e.shiftKey){
+      if (akcja.n === 'lin') b = prosto(akcja.a, b);
+      else { const d = Math.max(Math.abs(b[0] - akcja.a[0]), Math.abs(b[1] - akcja.a[1])); b = [akcja.a[0] + Math.sign(b[0] - akcja.a[0] || 1) * d, akcja.a[1] + Math.sign(b[1] - akcja.a[1] || 1) * d]; }
+    }
+    akcja.b = b;
+    const dx = Math.abs(b[0] - akcja.a[0]) / PXMM, dy = Math.abs(b[1] - akcja.a[1]) / PXMM;
+    info(akcja.n === 'lin' ? `Długość: <b>${mm(Math.hypot(dx, dy))} mm</b>` : `Wymiar: <b>${mm(dx)} × ${mm(dy)} mm</b>`);
+  } else if (wielo.length){
+    const q = przyciagnij(p), l = wielo[wielo.length - 1]; info(`Bok: <b>${mm(Math.hypot(q[0] - l[0], q[1] - l[1]) / PXMM)} mm</b> · rogów: ${wielo.length}`);
+  }
+  rysuj();
+};
+wid.onpointerup = () => {
+  if (pan){ pan = null; wid.style.cursor = 'crosshair'; return; }
+  if (!akcja) return;
+  if (akcja.n === 'pen' || akcja.n === 'gum'){ const b = akcja.box, m = akcja.w / 2 + 3; zapiszZmiane(b[0] - m, b[1] - m, b[2] + m, b[3] + m); }
+  else if (akcja.b && (Math.abs(akcja.b[0] - akcja.a[0]) > 1 || Math.abs(akcja.b[1] - akcja.a[1]) > 1)) rysujKsztalt(akcja.n, akcja.a, akcja.b);
+  akcja = null; info(''); rysuj();
+};
+wid.onpointerleave = () => { mysz = null; rysuj(); };
+wid.ondblclick = () => { if (narz === 'wie' && wielo.length){ wielo.pop(); zamknijWielo(); } };   // dwuklik dodal ostatni rog 2x
+wid.onwheel = (e) => { e.preventDefault(); const r = wid.getBoundingClientRect(), X = e.clientX - r.left, Y = e.clientY - r.top, [kx, ky] = doKartki(X, Y);
+  sc = Math.min(8, Math.max(0.08, sc * (e.deltaY < 0 ? 1.15 : 1 / 1.15))); ox = X - kx * sc; oy = Y - ky * sc; rysuj(); };
+
+// ---------- narzedzia i przyciski ----------
+function ustawNarz(n){ narz = n; wielo = []; akcja = null; info(''); document.querySelectorAll('.nb').forEach(b => b.classList.toggle('on', b.dataset.n === n)); rysuj(); }
+document.querySelectorAll('.nb').forEach(b => b.onclick = () => ustawNarz(b.dataset.n));
+$('#gr').oninput = () => { $('#grW').textContent = String($('#gr').value).replace('.', ',') + ' mm'; rysuj(); };
+$('#grG').oninput = () => { $('#grGW').textContent = $('#grG').value + ' mm'; };
+$('#siatka').onchange = rysuj;
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && k === 'z'){ e.preventDefault(); $('#bCofnij').click(); return; }
+  if ((e.ctrlKey || e.metaKey) && k === 'y'){ e.preventDefault(); $('#bPonow').click(); return; }
+  if ((e.ctrlKey || e.metaKey) && k === 's'){ e.preventDefault(); $('#bZapisz').click(); return; }
+  if (k === 'escape'){ wielo = []; akcja = null; info(''); rysuj(); return; }
+  if (k === 'enter' && wielo.length){ zamknijWielo(); return; }
+  const m = { p: 'pen', g: 'gum', l: 'lin', r: 'pro', k: 'eli', w: 'wie' }[k]; if (m && !e.ctrlKey) ustawNarz(m);
+});
+$('#bNowa').onclick = () => { if (zmiany && !confirm('Wyczyścić kartkę? (Cofnij przywróci rysunek)')) return; zapiszCala(); kc.fillStyle = '#fff'; kc.fillRect(0, 0, kart.width, kart.height); rysuj(); };
+$('#bOrient').onclick = () => {
+  zapiszCala(); const stary = document.createElement('canvas'); stary.width = kart.width; stary.height = kart.height; stary.getContext('2d').drawImage(kart, 0, 0);
+  pion = !pion; nowaKartka(); kc.drawImage(stary, 0, 0); dopasuj();
+};
+$('#bDopasuj').onclick = dopasuj;
+$('#bWybiel').onclick = () => {
+  zapiszCala(); const d = kc.getImageData(0, 0, kart.width, kart.height), a = d.data;
+  for (let i = 0; i < a.length; i += 4){ const v = (a[i] * 299 + a[i + 1] * 587 + a[i + 2] * 114) / 1000; if (v > 165){ a[i] = a[i + 1] = a[i + 2] = 255; } else { const c = v < 110 ? 0 : (v - 110) * 255 / 55; a[i] = a[i + 1] = a[i + 2] = c; } }
+  kc.putImageData(d, 0, 0); rysuj(); toast('Tło wybielone, kreski są czarne. Cofnij, jeśli za mocno.');
+};
+
+// ---------- DPI z pliku (PNG pHYs, JPG JFIF) ----------
+function dpiPliku(buf){
+  const b = new Uint8Array(buf), dv = new DataView(buf);
+  if (b[0] === 0x89 && b[1] === 0x50){ let o = 8; while (o + 8 < b.length){ const len = dv.getUint32(o), t = String.fromCharCode(b[o + 4], b[o + 5], b[o + 6], b[o + 7]);
+      if (t === 'pHYs' && len >= 9){ const ppm = dv.getUint32(o + 8), u = b[o + 16]; return u === 1 ? ppm * 0.0254 : 0; } if (t === 'IDAT' || t === 'IEND') break; o += 12 + len; } return 0; }
+  if (b[0] === 0xFF && b[1] === 0xD8){ let o = 2; while (o + 4 < b.length && b[o] === 0xFF){ const m = b[o + 1], len = dv.getUint16(o + 2);
+      if (m === 0xE0 && String.fromCharCode(b[o + 4], b[o + 5], b[o + 6], b[o + 7]) === 'JFIF'){ const u = b[o + 11], x = dv.getUint16(o + 12); return u === 1 ? x : u === 2 ? x * 2.54 : 0; }
+      if (m === 0xDA) break; o += 2 + len; } }
+  return 0;
+}
+$('#bOtworz').onclick = () => $('#plik').click();
+$('#plik').onchange = async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+  const buf = await f.arrayBuffer(); let dpi = 0; try { dpi = dpiPliku(buf); } catch (er) {}
+  const url = URL.createObjectURL(f), im = new Image();
+  im.onload = () => {
+    URL.revokeObjectURL(url);
+    const prawdziwy = dpi >= 50 && dpi <= 2400 && (dpi >= 100 || /\.png$/i.test(f.name));
+    const wmmIm = prawdziwy ? im.naturalWidth / dpi * 25.4 : 0, hmmIm = prawdziwy ? im.naturalHeight / dpi * 25.4 : 0;
+    // orientacja kartki jak obrazek
+    const poziomo = im.naturalWidth > im.naturalHeight * 1.05;
+    zapiszCala();
+    if (poziomo === pion){ pion = !poziomo; nowaKartka(); }
+    kc.fillStyle = '#fff'; kc.fillRect(0, 0, kart.width, kart.height);
+    let w, h;
+    if (prawdziwy){ w = wmmIm * PXMM; h = hmmIm * PXMM; }
+    else { const k = Math.min(kart.width / im.naturalWidth, kart.height / im.naturalHeight); w = im.naturalWidth * k; h = im.naturalHeight * k; }
+    kc.imageSmoothingQuality = 'high'; kc.drawImage(im, 0, 0, w, h);
+    dopasuj();
+    toast(prawdziwy ? `Wczytane w prawdziwym rozmiarze (${Math.round(dpi)} dpi). Możesz poprawiać.` : 'Zdjęcie bez prawdziwego wymiaru (np. z telefonu) – dopasowane do kartki. W Warsztacie wpisz szerokość ręcznie.', 6000);
+  };
+  im.onerror = () => { URL.revokeObjectURL(url); toast('Nie mogę otworzyć tego pliku'); };
+  im.src = url;
+};
+
+// ---------- zapis PNG z rozdzielczoscia (pHYs) - Warsztat zna wtedy prawdziwy wymiar ----------
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b){ let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function pngZDpi(blob, dpi){
+  const src = new Uint8Array(await blob.arrayBuffer()), ppm = Math.round(dpi / 0.0254);
+  const ch = new Uint8Array(21), dv = new DataView(ch.buffer);
+  dv.setUint32(0, 9); ch.set([0x70, 0x48, 0x59, 0x73], 4); dv.setUint32(8, ppm); dv.setUint32(12, ppm); ch[16] = 1; dv.setUint32(17, crc32(ch.subarray(4, 17)));
+  const ihdrEnd = 8 + 12 + new DataView(src.buffer).getUint32(8);   // sygnatura + IHDR
+  const out = new Uint8Array(src.length + 21); out.set(src.subarray(0, ihdrEnd), 0); out.set(ch, ihdrEnd); out.set(src.subarray(ihdrEnd), ihdrEnd + 21);
+  return new Blob([out], { type: 'image/png' });
+}
+$('#bZapisz').onclick = () => {
+  kart.toBlob(async (b) => {
+    const z = await pngZDpi(b, DPI), a = document.createElement('a');
+    const d = new Date(), p2 = v => String(v).padStart(2, '0');
+    a.href = URL.createObjectURL(z); a.download = `rysunek_A4_${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}.png`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); zmiany = false;
+    toast('Zapisane jako PNG. W Warsztacie: Szkic → Wybierz zdjęcie… – wymiar weźmie sam.', 5000);
+  }, 'image/png');
+};
+window.addEventListener('beforeunload', (e) => { if (zmiany){ e.preventDefault(); e.returnValue = ''; } });
+
+// ---------- start ----------
+nowaKartka();
+new ResizeObserver(() => { const pierwszy = !wid.width; rozmiarWidoku(); if (pierwszy || !sc) dopasuj(); }).observe($('#box'));
+rozmiarWidoku(); dopasuj();
+</script>
+</body>
+</html>
