@@ -363,8 +363,15 @@ $('#bWarsztat').onclick = () => {
       const z = await pngZDpi(b, DPI), db = await mostDB();
       await new Promise((ok, zle) => { const t = db.transaction('x', 'readwrite'); t.objectStore('x').put({ blob: z, dpi: DPI, czas: Date.now() }, 'ostatni'); t.oncomplete = ok; t.onerror = () => zle(t.error); });
       zmiany = false;
-      toast('Wysłane! W Warsztacie: Szkic → „✏️ Z Rysownika”. Otwieram Warsztat…', 6000);
-      setTimeout(() => window.open('../Warsztat-3D/', 'warsztat3d'), 700);
+      // czy jakis Warsztat jest juz otwarty? (odpowie przez BroadcastChannel)
+      let odp = false; const id = Date.now() + Math.random();
+      const kan = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('rysownik_most') : null;
+      if (kan){ kan.onmessage = (ev) => { if (ev.data && ev.data.typ === 'mam' && ev.data.id === id) odp = true; }; kan.postMessage({ typ: 'nowy', id }); }
+      setTimeout(() => {
+        if (kan) kan.close();
+        if (odp) toast('Wysłane do otwartego Warsztatu – przełącz się na jego kartę, kształt jest już w Szkicu.', 6000);
+        else { toast('Wysłane! Otwieram Warsztat – tam: Własny model → Szkic → „✏️ Z Rysownika”.', 7000); window.open('../Warsztat-3D/', 'warsztat3d'); }
+      }, 600);
     } catch (e) {  toast('Nie udało się wysłać: ' + e.message + ' – zapisz PNG i wczytaj ręcznie.', 6000); }
   }, 'image/png');
 };
